@@ -1,0 +1,82 @@
+from pygame import *
+from random import randint
+font.init()
+
+window = display.set_mode((700, 500))
+
+background = transform.scale(image.load('christmas_background.jpeg'), (700, 500))
+clock = time.Clock()
+
+font = font.Font(None, 35)
+number_of_gifts = 0
+
+class GameSprite(sprite.Sprite):
+    def __init__(self, speed, picture, x, y):
+        super().__init__()
+        self.speed = speed
+        self.image = transform.scale(image.load(picture), (80, 80))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+    def reset(self):
+        window.blit(self.image, (self.rect.x, self.rect.y))
+
+class Player(GameSprite):
+    def __init__(self, speed, picture, x, y):
+        super().__init__(speed, picture, x, y)
+        self.image = transform.scale(image.load(picture), (110, 135))
+    def update(self):
+        keys_pressed = key.get_pressed()
+        if keys_pressed[K_a] and self.rect.x > 0:
+            self.rect.x -= 9
+        if keys_pressed[K_d] and self.rect.x < 620:
+            self.rect.x += 9
+
+class Present(GameSprite):
+    def __init__(self, speed, picture, x, y):
+        super().__init__(speed, picture, x, y)
+    def update(self):
+        if self.rect.y >= 500:
+            self.rect.y = 0
+            self.rect.x = randint(100, 450)
+            self.speed = randint(2,3)
+        self.rect.y += self.speed
+
+player = Player(10, 'bag.png', 350, 350)
+present = Present(3, 'gift_box.png', 500, 0)
+presents = sprite.Group()
+
+for i in range(5):
+    present = Present(3, 'gift_box.png', randint(100, 450), 0)
+    presents.add(present)
+
+game = True
+show = True
+while game:
+    for e in event.get():
+        if e.type == QUIT:
+            game = False
+
+    sprites_list = sprite.spritecollide(player, presents, False)
+
+    if show == True:
+        presents.update()
+
+    if present in sprites_list:
+        number_of_gifts += 1
+        present = Present(3, 'gift_box.png', randint(100, 450), 0)
+        presents.add(present)
+    
+    if sprite.spritecollide(player, presents, False):
+        show = False
+
+    number_of_collect_gifts = font.render('Всего полученных подарков:' + str(number_of_gifts), True, (255, 255, 255))
+    window.blit(background, (0, 0))
+    window.blit(number_of_collect_gifts, (0, 0))
+    player.reset()
+    player.update()
+    presents.update()
+    presents.draw(window)
+
+    clock.tick(60)
+    display.update()
